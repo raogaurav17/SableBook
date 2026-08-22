@@ -1,0 +1,44 @@
+# Build directories
+build/
+bin/
+lib/
+out/
+cmake-build-*/
+
+# Compiled Object files and libraries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# CMake artifacts
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+compile_commands.json
+CMakeUserPresets.json
+
+# Testing artifacts
+Testing/
+*.log
+*.trs
+
+# IDE / Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Artifacts & Temporary files
+*.tmp
+*.temp
+core
+core.*
