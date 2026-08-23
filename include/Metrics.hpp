@@ -8,7 +8,7 @@
 #include <iostream>
 #include <iomanip>
 
-namespace lobster {
+namespace sablebook {
 
 inline uint64_t getTimestampNs() noexcept {
     return static_cast<uint64_t>(
@@ -114,4 +114,4 @@ private:
     std::vector<uint64_t> samples_;
 };
 
-} // namespace lobster
+} // namespace sablebook

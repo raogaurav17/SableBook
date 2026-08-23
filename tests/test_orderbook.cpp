@@ -1,7 +1,7 @@
 #include "test_framework.hpp"
 #include "OrderBook.hpp"
 
-using namespace lobster;
+using namespace sablebook;
 
 TEST_CASE(TestOrderBook_EmptyBook) {
     OrderBook book("BTC-USD");

@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 
-namespace lobster {
+namespace sablebook {
 
 struct Order {
     uint64_t     order_id{0};
@@ -54,4 +54,4 @@ struct Order {
 
 using OrderPtr = std::shared_ptr<Order>;
 
-} // namespace lobster
+} // namespace sablebook

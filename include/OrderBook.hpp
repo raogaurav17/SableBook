@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-namespace lobster {
+namespace sablebook {
 
 struct OrderLocation {
     OrderPtr order;
@@ -70,4 +70,4 @@ private:
     std::unordered_map<uint64_t, OrderPtr> order_history_;
 };
 
-} // namespace lobster
+} // namespace sablebook

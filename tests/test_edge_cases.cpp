@@ -1,7 +1,7 @@
 #include "test_framework.hpp"
 #include "MatchingEngine.hpp"
 
-using namespace lobster;
+using namespace sablebook;
 
 TEST_CASE(TestEdgeCases_ValidationAndRejections) {
     MatchingEngine engine(100'000); // max size 100,000

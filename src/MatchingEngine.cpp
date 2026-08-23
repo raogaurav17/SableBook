@@ -1,6 +1,6 @@
 #include "MatchingEngine.hpp"
 
-namespace lobster {
+namespace sablebook {
 
 MatchingEngine::MatchingEngine(uint64_t max_order_quantity)
     : max_order_quantity_(max_order_quantity) {
@@ -226,4 +226,4 @@ void MatchingEngine::reset() {
     registerSymbol("DEFAULT");
 }
 
-} // namespace lobster
+} // namespace sablebook

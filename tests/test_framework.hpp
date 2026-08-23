@@ -7,7 +7,7 @@
 #include <sstream>
 #include <cmath>
 
-namespace lobster::test {
+namespace sablebook::test {
 
 struct TestCase {
     std::string name;
@@ -29,7 +29,7 @@ public:
         int passed = 0;
         int failed = 0;
         std::cout << "\n======================================================\n";
-        std::cout << "           Running LOBster Test Suite\n";
+        std::cout << "           Running SableBook Test Suite\n";
         std::cout << "======================================================\n";
 
         for (const auto& tc : tests_) {
@@ -67,7 +67,7 @@ struct AutoRegister {
 
 #define TEST_CASE(name) \
     void name(); \
-    static ::lobster::test::AutoRegister auto_reg_##name(#name, name); \
+    static ::sablebook::test::AutoRegister auto_reg_##name(#name, name); \
     void name()
 
 inline void assertTrue(bool cond, const std::string& msg, const char* file, int line) {
@@ -86,10 +86,10 @@ inline void assertEqualDouble(double a, double b, double eps, const std::string&
     }
 }
 
-#define ASSERT_TRUE(cond) ::lobster::test::assertTrue((cond), #cond, __FILE__, __LINE__)
-#define ASSERT_FALSE(cond) ::lobster::test::assertTrue(!(cond), "!(" #cond ")", __FILE__, __LINE__)
-#define ASSERT_EQ(a, b) ::lobster::test::assertTrue((a) == (b), #a " == " #b, __FILE__, __LINE__)
-#define ASSERT_NE(a, b) ::lobster::test::assertTrue((a) != (b), #a " != " #b, __FILE__, __LINE__)
-#define ASSERT_DOUBLE_EQ(a, b) ::lobster::test::assertEqualDouble((a), (b), 1e-6, #a " == " #b, __FILE__, __LINE__)
+#define ASSERT_TRUE(cond) ::sablebook::test::assertTrue((cond), #cond, __FILE__, __LINE__)
+#define ASSERT_FALSE(cond) ::sablebook::test::assertTrue(!(cond), "!(" #cond ")", __FILE__, __LINE__)
+#define ASSERT_EQ(a, b) ::sablebook::test::assertTrue((a) == (b), #a " == " #b, __FILE__, __LINE__)
+#define ASSERT_NE(a, b) ::sablebook::test::assertTrue((a) != (b), #a " != " #b, __FILE__, __LINE__)
+#define ASSERT_DOUBLE_EQ(a, b) ::sablebook::test::assertEqualDouble((a), (b), 1e-6, #a " == " #b, __FILE__, __LINE__)
 
-} // namespace lobster::test
+} // namespace sablebook::test

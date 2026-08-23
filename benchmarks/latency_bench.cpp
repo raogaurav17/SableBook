@@ -7,7 +7,7 @@
 #include <chrono>
 #include <iomanip>
 
-using namespace lobster;
+using namespace sablebook;
 
 void runLimitOrderInsertBenchmark(size_t num_orders) {
     MatchingEngine engine;
@@ -181,7 +181,7 @@ void runRealisticMixedWorkloadBenchmark(size_t total_events) {
 
 int main() {
     std::cout << "======================================================\n";
-    std::cout << "        LOBster Performance Benchmark Suite           \n";
+    std::cout << "        SableBook Performance Benchmark Suite         \n";
     std::cout << "======================================================\n\n";
 
     constexpr size_t N = 200'000;

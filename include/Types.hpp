@@ -6,7 +6,7 @@
 #include <vector>
 #include <iostream>
 
-namespace lobster {
+namespace sablebook {
 
 enum class Side : uint8_t {
     Buy,
@@ -104,4 +104,4 @@ struct BBO {
     }
 };
 
-} // namespace lobster
+} // namespace sablebook

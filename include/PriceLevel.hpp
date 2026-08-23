@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace lobster {
+namespace sablebook {
 
 class PriceLevel {
 public:
@@ -68,4 +68,4 @@ private:
     OrderList orders_;
 };
 
-} // namespace lobster
+} // namespace sablebook

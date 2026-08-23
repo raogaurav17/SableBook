@@ -7,7 +7,7 @@
 #include <thread>
 #include <random>
 
-using namespace lobster;
+using namespace sablebook;
 
 // ANSI Color Codes
 namespace Color {
@@ -25,13 +25,13 @@ namespace Color {
 void printHeader() {
     std::cout << Color::Cyan << Color::Bold;
     std::cout << R"(
-  _      ____  ____       _            
- | |    / __ \|  _ \     | |           
- | |   | |  | | |_) | ___| |_ ___ _ __ 
- | |   | |  | |  _ < / __| __/ _ \ '__|
- | |___| |__| | |_) |\__ \ ||  __/ |   
- |______\____/|____/ |___/\__\___|_|   
-    Limit Order Book & Matching Engine
+   _____       _     _      ____              _    
+  / ____|     | |   | |    |  _ \            | |   
+ | (___   __ _| |__ | | ___| |_) | ___   ___ | | __
+  \___ \ / _` | '_ \| |/ _ \  _ < / _ \ / _ \| |/ /
+  ____) | (_| | |_) | |  __/ |_) | (_) | (_) |   < 
+ |_____/ \__,_|_.__/|_|\___|____/ \___/ \___/|_|\_\
+       Limit Order Book & Matching Engine
 )" << Color::Reset << "\n";
 }
 
@@ -132,7 +132,7 @@ void printHelp() {
               << "  " << Color::Magenta<< "sim [count]" << Color::Reset << "                        : Run live market simulation\n"
               << "  " << Color::Magenta<< "stats" << Color::Reset << "                              : Display engine statistics & latency\n"
               << "  " << Color::Gray  << "help" << Color::Reset << "                               : Show this help message\n"
-              << "  " << Color::Gray  << "exit / quit" << Color::Reset << "                        : Exit LOBster CLI\n\n";
+              << "  " << Color::Gray  << "exit / quit" << Color::Reset << "                        : Exit SableBook CLI\n\n";
 }
 
 int main() {
@@ -163,7 +163,7 @@ int main() {
 
     std::string line;
     while (true) {
-        std::cout << Color::Bold << "LOBster> " << Color::Reset;
+        std::cout << Color::Bold << "SableBook> " << Color::Reset;
         if (!std::getline(std::cin, line)) break;
 
         std::istringstream iss(line);
@@ -171,7 +171,7 @@ int main() {
         if (!(iss >> cmd)) continue;
 
         if (cmd == "exit" || cmd == "quit") {
-            std::cout << "Exiting LOBster. Goodbye!\n";
+            std::cout << "Exiting SableBook. Goodbye!\n";
             break;
         } else if (cmd == "help") {
             printHelp();

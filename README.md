@@ -1,4 +1,4 @@
-# LOBster — Limit Order Book & Matching Engine
+# SableBook — Limit Order Book & Matching Engine
 
 [![Language](https://img.shields.io/badge/Language-C%2B%2B20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Standard](https://img.shields.io/badge/Standard-ISO%20C%2B%2B20-00599C.svg)](https://isocpp.org/)
@@ -7,7 +7,7 @@
 [![Throughput](https://img.shields.io/badge/Throughput->1.5M%20ops%2Fsec-success.svg)]()
 [![Latency](https://img.shields.io/badge/p50%20Latency-0.20%20μs-orange.svg)]()
 
-**LOBster** is an ultra-low latency, deterministic Limit Order Book (LOB) and Matching Engine written in **Modern C++ (C++20)**. It is architected for financial exchanges, electronic market making, and quantitative trading simulations requiring sub-microsecond execution latencies and strict price-time priority (FIFO) matching guarantees.
+**SableBook** is an ultra-low latency, deterministic Limit Order Book (LOB) and Matching Engine written in **Modern C++ (C++20)**. It is architected for financial exchanges, electronic market making, and quantitative trading simulations requiring sub-microsecond execution latencies and strict price-time priority (FIFO) matching guarantees.
 
 ---
 
@@ -42,7 +42,7 @@ All benchmarks were evaluated using high-resolution monotonic clocks over **200,
 flowchart TD
     subgraph ClientLayer ["Client & Ingestion Layer"]
         Client["Client / Trading Strategy / Simulator"]
-        CLI["Interactive CLI Visualizer (lobster_cli)"]
+        CLI["Interactive CLI Visualizer (sablebook_cli)"]
     end
 
     subgraph GatewayLayer ["Order Gateway & Validation"]
@@ -259,7 +259,7 @@ classDiagram
 ## Directory Structure
 
 ```text
-LOBster/
+SableBook/
 ├── include/
 │   ├── Types.hpp            # Enums (Side, OrderType, OrderStatus, RejectReason), BBO, LevelView
 │   ├── Order.hpp            # Order entity and smart pointer aliases
@@ -303,12 +303,12 @@ cmake --build build -j$(nproc)
 
 ### 2. Run Unit Test Suite
 ```bash
-./build/lobster_tests
+./build/sablebook_tests
 ```
 *Output:*
 ```text
 ======================================================
-           Running LOBster Test Suite
+           Running SableBook Test Suite
 ======================================================
   [PASS] TestOrderBook_EmptyBook
   [PASS] TestOrderBook_AddRestingOrdersAndBBO
@@ -335,12 +335,12 @@ cmake --build build -j$(nproc)
 
 ### 3. Run Latency Benchmarks
 ```bash
-./build/lobster_bench
+./build/sablebook_bench
 ```
 
 ### 4. Run Interactive CLI Visualizer
 ```bash
-./build/lobster_cli
+./build/sablebook_cli
 ```
 
 ---
@@ -350,13 +350,13 @@ cmake --build build -j$(nproc)
 The interactive CLI provides a trading simulator with real-time ANSI-colored order book depth ladders:
 
 ```
-  _      ____  ____       _            
- | |    / __ \|  _ \     | |           
- | |   | |  | | |_) | ___| |_ ___ _ __ 
- | |   | |  | |  _ < / __| __/ _ \ '__|
- | |___| |__| | |_) |\__ \ ||  __/ |   
- |______\____/|____/ |___/\__\___|_|   
-    Limit Order Book & Matching Engine
+   _____       _     _      ____              _    
+  / ____|     | |   | |    |  _ \            | |   
+ | (___   __ _| |__ | | ___| |_) | ___   ___ | | __
+  \___ \ / _` | '_ \| |/ _ \  _ < / _ \ / _ \| |/ /
+  ____) | (_| | |_) | |  __/ |_) | (_) | (_) |   < 
+ |_____/ \__,_|_.__/|_|\___|____/ \___/ \___/|_|\_\
+       Limit Order Book & Matching Engine
 ```
 
 ### Command Reference
@@ -384,7 +384,7 @@ The interactive CLI provides a trading simulator with real-time ANSI-colored ord
 #include <iostream>
 
 int main() {
-    using namespace lobster;
+    using namespace sablebook;
 
     MatchingEngine engine;
     engine.registerSymbol("BTC-USD");
@@ -416,10 +416,9 @@ int main() {
 
 ## Summary
 
-> **LOBster — High-Performance Limit Order Book & Matching Engine in Modern C++ (C++20)**  
+> **SableBook — High-Performance Limit Order Book & Matching Engine in Modern C++ (C++20)**  
 > • Built a deterministic, ultra-low latency matching engine in C++20 supporting Limit/Market orders, partial fills, order modifications, and cancellations under strict FIFO Price-Time priority.  
 > • Designed an $O(1)$ iterator-indexed order lookup architecture achieving **1.06 μs** mean matching latency and **> 1,540,000 orders/sec** throughput.  
 > • Developed a modular multi-instrument engine with market data callbacks, 18 automated unit test suites, sub-microsecond latency benchmarking, and an interactive ANSI visualizer.
 
 ---
-

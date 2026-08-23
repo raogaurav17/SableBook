@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace lobster {
+namespace sablebook {
 
 OrderBook::OrderBook(std::string symbol)
     : symbol_(std::move(symbol)) {}
@@ -333,4 +333,4 @@ void OrderBook::clear() {
     order_history_.clear();
 }
 
-} // namespace lobster
+} // namespace sablebook

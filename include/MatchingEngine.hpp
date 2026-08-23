@@ -13,7 +13,7 @@
 #include <vector>
 #include <optional>
 
-namespace lobster {
+namespace sablebook {
 
 class MatchingEngine {
 public:
@@ -88,4 +88,4 @@ private:
     LatencyTracker latency_tracker_;
 };
 
-} // namespace lobster
+} // namespace sablebook

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-namespace lobster {
+namespace sablebook {
 
 struct Trade {
     uint64_t    trade_id{0};
@@ -36,4 +36,4 @@ struct Trade {
           aggressor_side(agg_side) {}
 };
 
-} // namespace lobster
+} // namespace sablebook
