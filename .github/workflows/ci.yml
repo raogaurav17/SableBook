@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1: Build + Test Matrix (GCC-13, Clang-18) × (Debug, Release)
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-and-test:
+    name: "${{ matrix.compiler }} / ${{ matrix.build_type }}"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc-13
+            cc: gcc-13
+            cxx: g++-13
+            build_type: Debug
+          - compiler: gcc-13
+            cc: gcc-13
+            cxx: g++-13
+            build_type: Release
+          - compiler: clang-18
+            cc: clang-18
+            cxx: clang++-18
+            build_type: Debug
+          - compiler: clang-18
+            cc: clang-18
+            cxx: clang++-18
+            build_type: Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install compiler (${{ matrix.compiler }})
+        run: |
+          sudo apt-get update -qq
+          if [[ "${{ matrix.compiler }}" == gcc-* ]]; then
+            sudo apt-get install -y ${{ matrix.compiler }} g++-13
+          else
+            wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+            sudo add-apt-repository -y "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main"
+            sudo apt-get update -qq
+            sudo apt-get install -y clang-18
+          fi
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run Tests
+        run: ctest --test-dir build --output-on-failure
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2: AddressSanitizer + UndefinedBehaviorSanitizer
+  # ─────────────────────────────────────────────────────────────────────────────
+  asan-ubsan:
+    name: "ASan + UBSan (GCC-13 / Debug)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GCC-13
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gcc-13 g++-13
+
+      - name: Configure with ASan + UBSan
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc-13 \
+            -DCMAKE_CXX_COMPILER=g++-13 \
+            -DSABLEBOOK_SANITIZE=asan_ubsan
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run Tests under ASan + UBSan
+        env:
+          ASAN_OPTIONS: "halt_on_error=1:detect_leaks=1:print_stats=1"
+          UBSAN_OPTIONS: "halt_on_error=1:print_stacktrace=1"
+        run: ctest --test-dir build --output-on-failure
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 3: ThreadSanitizer (mutually exclusive with ASan — separate job)
+  # ─────────────────────────────────────────────────────────────────────────────
+  tsan:
+    name: "TSan (GCC-13 / Debug)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GCC-13
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gcc-13 g++-13
+
+      - name: Configure with TSan
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc-13 \
+            -DCMAKE_CXX_COMPILER=g++-13 \
+            -DSABLEBOOK_SANITIZE=tsan
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run Tests under TSan
+        env:
+          TSAN_OPTIONS: "halt_on_error=1:second_deadlock_stack=1"
+        run: ctest --test-dir build --output-on-failure
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 4: Benchmark Smoke Test (Release only — confirms it builds & runs)
+  # ─────────────────────────────────────────────────────────────────────────────
+  benchmark-smoke:
+    name: "Benchmark Smoke Test (GCC-13 / Release)"
+    runs-on: ubuntu-latest
+    needs: build-and-test   # only run if matrix passes
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GCC-13
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gcc-13 g++-13
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-13 \
+            -DCMAKE_CXX_COMPILER=g++-13
+
+      - name: Build
+        run: cmake --build build --parallel $(nproc) --target sablebook_bench
+
+      - name: Run Benchmark (smoke — not a regression gate)
+        run: ./build/sablebook_bench
