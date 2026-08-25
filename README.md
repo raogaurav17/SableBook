@@ -1,11 +1,13 @@
 # SableBook — Limit Order Book & Matching Engine
 
+[![CI](https://github.com/raogaurav17/SableBook/actions/workflows/ci.yml/badge.svg)](https://github.com/raogaurav17/SableBook/actions/workflows/ci.yml)
 [![Language](https://img.shields.io/badge/Language-C%2B%2B20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Standard](https://img.shields.io/badge/Standard-ISO%20C%2B%2B20-00599C.svg)](https://isocpp.org/)
 [![Build System](https://img.shields.io/badge/Build-CMake%203.20%2B-064F8C.svg)](https://cmake.org/)
-[![Tests](https://img.shields.io/badge/Tests-18%2F18%20Passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-18%2F18%20Passing-brightgreen.svg)](https://github.com/raogaurav17/SableBook/actions)
 [![Throughput](https://img.shields.io/badge/Throughput->1.5M%20ops%2Fsec-success.svg)]()
 [![Latency](https://img.shields.io/badge/p50%20Latency-0.20%20μs-orange.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **SableBook** is an ultra-low latency, deterministic Limit Order Book (LOB) and Matching Engine written in **Modern C++ (C++20)**. It is architected for financial exchanges, electronic market making, and quantitative trading simulations requiring sub-microsecond execution latencies and strict price-time priority (FIFO) matching guarantees.
 
@@ -20,6 +22,29 @@
 - **Memory Safety & Modern RAII**: Zero memory leaks, zero dangling pointers, cache-conscious memory layouts using standard containers.
 - **Multi-Instrument Architecture**: Isolated order books per symbol (`BTC-USD`, `ETH-USD`, `AAPL`, `MSFT`).
 - **Interactive Visualizer & REPL**: Real-time ANSI-colored depth ladder, live market simulation, and instant BBO spread calculations.
+- **Production-Grade CI/CD**: Automated multi-compiler build matrix, AddressSanitizer, UndefinedBehaviorSanitizer, and ThreadSanitizer on every push.
+
+---
+
+## Core Capabilities
+
+### Order Routing & Execution Semantics
+- **Limit & Market Orders**: Full support for aggressive crossing and resting execution. Unmatched limit volume rests on the book; unfulfilled market volume is cleanly expired.
+- **Strict Price-Time Priority (FIFO)**: Deterministic execution matching best price levels first, consuming resting chronological queues in arrival order.
+- **Deterministic Partial Fills**: Exact volume decrementing across maker and taker orders with instantaneous aggregate level volume updates.
+
+### Fast Book Operations & Queue Management
+- **$O(1)$ Direct Cancellation**: Iterator-indexed lookup table enables immediate removal from any queue position (head, middle, tail) without linear scans.
+- **In-Place Order Modification (Amend)**: Reducing order volume retains original queue priority; modifying price or increasing volume re-queues the order.
+- **Constant-Time BBO & Depth Queries**: Instantaneous retrieval of Best Bid, Best Offer, Spread, Mid-Price, and Top-$N$ aggregated depth ladders.
+
+### Market Data & Event Publishing
+- **Decoupled Callbacks**: Low-overhead event dispatchers for trade executions (`on_trade_`), book depth mutations (`on_book_update_`), and order rejects (`on_reject_`).
+- **Full Lifecycle State Machine**: Explicit tracking across order states (`New` → `PartiallyFilled` → `Filled`, `Cancelled`, `Rejected`).
+
+### Pre-Trade Risk & Multi-Asset Engine
+- **Ingress Validation**: Rejects invalid orders (price $\le 0$, quantity $= 0$) and enforces configurable maximum order size limits with explicit reject reason codes.
+- **Multi-Symbol Coordinator**: Isolated order books per instrument (`BTC-USD`, `ETH-USD`, `AAPL`, `MSFT`) managed by a unified matching coordinator.
 
 ---
 
@@ -33,6 +58,21 @@ All benchmarks were evaluated using high-resolution monotonic clocks over **200,
 | **Mixed Trading Workload** | 200,000 mixed events | **1,097,337 events/sec** | **0.54 μs** | **1.19 μs** | **2.41 μs** | **0.88 μs** |
 | **Order Cancellation** | 200,000 random cancels | **323,251 cancels/sec** | **2.48 μs** | **3.58 μs** | **5.25 μs** | **3.07 μs** |
 | **Limit Order Insertion** | 200,000 resting orders | **255,328 orders/sec** | **1.98 μs** | **4.12 μs** | **38.14 μs** | **3.85 μs** |
+
+---
+
+## CI/CD & Quality Assurance
+
+Every push to `master` and every pull request triggers a four-job GitHub Actions pipeline:
+
+| Job | Compilers | Configuration | Purpose |
+|---|---|---|---|
+| **Build & Test Matrix** | GCC-13, Clang-18 | Debug + Release | Correctness across compilers and build modes |
+| **ASan + UBSan** | GCC-13 | Debug | Detect memory errors, use-after-free, and undefined behavior |
+| **ThreadSanitizer** | GCC-13 | Debug | Detect data races and lock-order violations |
+| **Benchmark Smoke** | GCC-13 | Release | Verify benchmark binary builds and executes cleanly |
+
+Sanitizers are also available locally via **CMake Presets** (see [Build Instructions](#quick-start--build-instructions)).
 
 ---
 
@@ -234,56 +274,38 @@ classDiagram
 
 ---
 
-## Requirements Traceability Matrix
-
-| ID | Category | Requirement | Implementation Details | Status |
-|---|---|---|---|:---:|
-| **FR-1** | Core | Accept Limit Orders | Supported via `submitLimitOrder` / `submitOrder` with Buy/Sell sides | Complete |
-| **FR-2** | Core | Accept Market Orders | Immediate liquidity matching; unfilled volume automatically expired | Complete |
-| **FR-3** | Core | Price-Time Priority | $O(\log M)$ price lookup via ordered maps, $O(1)$ FIFO execution | Complete |
-| **FR-4** | Core | Partial Fills | Accurate reduction on resting maker and aggressive taker orders | Complete |
-| **FR-5** | Core | Order Cancellation | $O(1)$ cancellation via iterator index without queue scanning | Complete |
-| **FR-6** | Core | Status Tracking | `New`, `PartiallyFilled`, `Filled`, `Cancelled`, `Rejected` tracked | Complete |
-| **FR-7** | Core | Trade Generation | Trade event dispatched with maker/taker IDs, price, quantity, timestamp | Complete |
-| **FR-8** | Core | BBO & Spread Queries | Constant-time retrieval of Best Bid, Best Offer, Spread, and Mid-Price | Complete |
-| **FR-9** | Core | Order Book Depth | Top-$N$ price level aggregation (price, aggregate volume, order count) | Complete |
-| **FR-10** | Core | Multiple Orders / Level | FIFO queue per level with aggregate volume increment/decrement | Complete |
-| **FR-11** | Advanced | Amend / Modify Order | In-place volume reduction retains priority; price/size change re-queues | Complete |
-| **FR-12** | Advanced | Multi-Instrument | Multi-symbol registry supporting isolated books (`BTC-USD`, `ETH-USD`) | Complete |
-| **FR-13** | Advanced | Market Data Publishing | Callbacks for `on_trade_`, `on_book_update_`, and `on_reject_` | Complete |
-| **FR-14** | Advanced | Order Validation | Automatic rejection of $\le 0$ prices, $0$ quantities with reject codes | Complete |
-| **FR-15** | Advanced | Risk Limits | Configurable maximum order size enforcement | Complete |
-
----
-
 ## Directory Structure
 
 ```text
 SableBook/
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # GitHub Actions: build matrix, ASan, UBSan, TSan, benchmark smoke
 ├── include/
-│   ├── Types.hpp            # Enums (Side, OrderType, OrderStatus, RejectReason), BBO, LevelView
-│   ├── Order.hpp            # Order entity and smart pointer aliases
-│   ├── Trade.hpp            # Trade execution event structure
-│   ├── PriceLevel.hpp       # Price level FIFO queue and aggregated volume
-│   ├── OrderBook.hpp        # Core Limit Order Book (Bids, Asks, Matching algorithm)
-│   ├── MatchingEngine.hpp   # Engine coordinator, symbol router, validation, and callbacks
-│   └── Metrics.hpp          # High-resolution latency tracker and percentile statistics
+│   ├── Types.hpp                # Enums (Side, OrderType, OrderStatus, RejectReason), BBO, LevelView
+│   ├── Order.hpp                # Order entity and smart pointer aliases
+│   ├── Trade.hpp                # Trade execution event structure
+│   ├── PriceLevel.hpp           # Price level FIFO queue and aggregated volume
+│   ├── OrderBook.hpp            # Core Limit Order Book (Bids, Asks, Matching algorithm)
+│   ├── MatchingEngine.hpp       # Engine coordinator, symbol router, validation, and callbacks
+│   └── Metrics.hpp              # High-resolution latency tracker and percentile statistics
 ├── src/
-│   ├── OrderBook.cpp        # OrderBook implementation
-│   ├── MatchingEngine.cpp   # MatchingEngine implementation
-│   └── main.cpp             # Interactive CLI REPL with ANSI color depth ladder
+│   ├── OrderBook.cpp            # OrderBook implementation
+│   ├── MatchingEngine.cpp       # MatchingEngine implementation
+│   └── main.cpp                 # Interactive CLI REPL with ANSI color depth ladder
 ├── tests/
-│   ├── test_framework.hpp   # Lightweight test framework
-│   ├── test_orderbook.cpp   # Order book queries, BBO, and depth tests
-│   ├── test_matching.cpp    # Limit/Market matching, partial fills, and FIFO verification
-│   ├── test_cancel.cpp      # O(1) cancellations at head, middle, and tail
-│   ├── test_edge_cases.cpp  # Validation, rejections, modifications, multi-symbol tests
-│   └── test_main.cpp        # Unit test runner
+│   ├── test_framework.hpp       # Lightweight test framework
+│   ├── test_orderbook.cpp       # Order book queries, BBO, and depth tests
+│   ├── test_matching.cpp        # Limit/Market matching, partial fills, and FIFO verification
+│   ├── test_cancel.cpp          # O(1) cancellations at head, middle, and tail
+│   ├── test_edge_cases.cpp      # Validation, rejections, modifications, multi-symbol tests
+│   └── test_main.cpp            # Unit test runner
 ├── benchmarks/
-│   └── latency_bench.cpp    # Microsecond benchmark suite (4 comprehensive workloads)
-├── CMakeLists.txt           # Modern CMake build configuration (C++20, -O3, warnings)
-├── .gitignore               # Standard gitignore for C++/CMake artifacts
-└── README.md                # Comprehensive documentation
+│   └── latency_bench.cpp        # Microsecond benchmark suite (4 comprehensive workloads)
+├── CMakeLists.txt               # Modern CMake build configuration (C++20, sanitizer support)
+├── CMakePresets.json            # Named build presets: release, debug, asan, tsan
+├── .gitignore                   # Standard gitignore for C++/CMake artifacts
+└── README.md                    # Comprehensive documentation
 ```
 
 ---
@@ -291,20 +313,56 @@ SableBook/
 ## Quick Start & Build Instructions
 
 ### Prerequisites
-- **Compiler**: GCC 10+, Clang 11+, or MSVC 2019+ (C++20 standard support required)
-- **Build System**: CMake 3.20+
 
-### 1. Build the Project
+| Requirement | Minimum Version |
+|---|---|
+| Compiler | GCC 10+, Clang 11+, or MSVC 2019+ (C++20 required) |
+| Build System | CMake 3.20+ |
+| OS | Linux, macOS, Windows |
+
+### Option A — CMake Presets (Recommended)
+
+`CMakePresets.json` provides named configurations so you never need to remember flags:
+
 ```bash
-# Configure and build with maximum compiler optimizations
+# Standard release build (CLI + tests + benchmarks)
+cmake --preset release && cmake --build --preset release
+ctest --preset release
+
+# Debug build
+cmake --preset debug && cmake --build --preset debug
+
+# AddressSanitizer + UndefinedBehaviorSanitizer
+cmake --preset asan && cmake --build --preset asan && ctest --preset asan
+
+# ThreadSanitizer
+cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan
+```
+
+Each preset writes to its own isolated directory (`build-release/`, `build-asan/`, etc.) so all four can coexist without reconfiguring.
+
+### Option B — Manual CMake
+
+```bash
+# Release (optimized)
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
+
+# ASan + UBSan
+cmake -B build-asan -DCMAKE_BUILD_TYPE=Debug -DSABLEBOOK_SANITIZE=asan_ubsan
+cmake --build build-asan -j$(nproc)
+
+# TSan
+cmake -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DSABLEBOOK_SANITIZE=tsan
+cmake --build build-tsan -j$(nproc)
 ```
 
-### 2. Run Unit Test Suite
+### Run the Test Suite
+
 ```bash
-./build/sablebook_tests
+./build-release/sablebook_tests
 ```
+
 *Output:*
 ```text
 ======================================================
@@ -333,14 +391,16 @@ cmake --build build -j$(nproc)
 ======================================================
 ```
 
-### 3. Run Latency Benchmarks
+### Run Latency Benchmarks
+
 ```bash
-./build/sablebook_bench
+./build-release/sablebook_bench
 ```
 
-### 4. Run Interactive CLI Visualizer
+### Run the Interactive CLI Visualizer
+
 ```bash
-./build/sablebook_cli
+./build-release/sablebook_cli
 ```
 
 ---
@@ -360,6 +420,7 @@ The interactive CLI provides a trading simulator with real-time ANSI-colored ord
 ```
 
 ### Command Reference
+
 | Command | Syntax | Description | Example |
 |---|---|---|---|
 | **Limit Buy** | `limit buy <price> <qty> [symbol]` | Submit a Limit Buy order | `limit buy 100.50 10 BTC-USD` |
@@ -397,16 +458,26 @@ int main() {
                   << ", Sell #" << trade.sell_order_id << "]\n";
     });
 
+    // Subscribe to reject events
+    engine.setRejectCallback([](uint64_t order_id, RejectReason reason) {
+        std::cout << "Order #" << order_id << " rejected: " 
+                  << toString(reason) << "\n";
+    });
+
     // 1. Submit resting limit sell
     uint64_t sell_id = engine.submitLimitOrder(Side::Sell, 50000.0, 2, "BTC-USD");
 
-    // 2. Submit aggressive limit buy that matches resting sell
+    // 2. Submit aggressive limit buy — triggers trade callback
     uint64_t buy_id = engine.submitLimitOrder(Side::Buy, 50000.0, 2, "BTC-USD");
 
-    // 3. Query BBO
+    // 3. Query BBO (book should now be empty)
     BBO bbo = engine.getBBO("BTC-USD");
     std::cout << "Has Bid: " << std::boolalpha << bbo.hasBid() << "\n";
     std::cout << "Has Ask: " << std::boolalpha << bbo.hasAsk() << "\n";
+
+    // 4. Engine statistics
+    std::cout << "Total orders processed: " << engine.totalOrdersProcessed() << "\n";
+    std::cout << "Total trades generated: " << engine.totalTradesGenerated() << "\n";
 
     return 0;
 }
@@ -416,9 +487,14 @@ int main() {
 
 ## Summary
 
-> **SableBook — High-Performance Limit Order Book & Matching Engine in Modern C++ (C++20)**  
-> • Built a deterministic, ultra-low latency matching engine in C++20 supporting Limit/Market orders, partial fills, order modifications, and cancellations under strict FIFO Price-Time priority.  
-> • Designed an $O(1)$ iterator-indexed order lookup architecture achieving **1.06 μs** mean matching latency and **> 1,540,000 orders/sec** throughput.  
+> **SableBook — High-Performance Limit Order Book & Matching Engine in Modern C++ (C++20)**
+>
+> • Built a deterministic, ultra-low latency matching engine in C++20 supporting Limit/Market orders, partial fills, order modifications, and cancellations under strict FIFO Price-Time priority.
+>
+> • Designed an $O(1)$ iterator-indexed order lookup architecture achieving **1.06 μs** mean matching latency and **> 1,540,000 orders/sec** throughput.
+>
 > • Developed a modular multi-instrument engine with market data callbacks, 18 automated unit test suites, sub-microsecond latency benchmarking, and an interactive ANSI visualizer.
+>
+> • Implemented a production-grade CI/CD pipeline with a multi-compiler build matrix (GCC-13, Clang-18) and continuous sanitizer testing (AddressSanitizer, UBSan, ThreadSanitizer) on every commit.
 
 ---
