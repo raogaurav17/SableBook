@@ -1,5 +1,7 @@
 #include "MatchingEngine.hpp"
 
+#include <cmath>
+
 namespace sablebook {
 
 MatchingEngine::MatchingEngine(uint64_t max_order_quantity)
@@ -44,7 +46,7 @@ uint64_t MatchingEngine::submitOrder(const std::string& symbol,
         return 0;
     }
 
-    if (type == OrderType::Limit && price <= 0.0) {
+    if (type == OrderType::Limit && (!std::isfinite(price) || price <= 0.0)) {
         if (reject_reason) *reject_reason = RejectReason::InvalidPrice;
         if (on_reject_) on_reject_(0, RejectReason::InvalidPrice);
         return 0;
@@ -125,7 +127,7 @@ bool MatchingEngine::cancelOrder(uint64_t order_id) {
 }
 
 bool MatchingEngine::modifyOrder(uint64_t order_id, double new_price, uint64_t new_qty) {
-    if (new_qty == 0 || new_price <= 0.0) {
+    if (new_qty == 0 || !std::isfinite(new_price) || new_price <= 0.0) {
         return false;
     }
 

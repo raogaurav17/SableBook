@@ -65,7 +65,7 @@ enum class RejectReason : uint8_t {
 
 inline std::string toString(RejectReason reason) {
     switch (reason) {
-        case RejectReason::None:                  return "None";
+        case RejectReason::None:                 return "None";
         case RejectReason::InvalidPrice:         return "InvalidPrice";
         case RejectReason::InvalidQuantity:      return "InvalidQuantity";
         case RejectReason::OrderNotFound:        return "OrderNotFound";

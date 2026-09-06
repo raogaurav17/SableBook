@@ -1,6 +1,8 @@
 #include "test_framework.hpp"
 #include "MatchingEngine.hpp"
 
+#include <limits>
+
 using namespace sablebook;
 
 TEST_CASE(TestEdgeCases_ValidationAndRejections) {
@@ -30,6 +32,19 @@ TEST_CASE(TestEdgeCases_ValidationAndRejections) {
     ASSERT_EQ(o3, 0);
     ASSERT_EQ(reason, RejectReason::InvalidPrice);
 
+    // Non-finite prices
+    uint64_t o_nan = engine.submitOrder(
+        "DEFAULT", Side::Buy, OrderType::Limit,
+        std::numeric_limits<double>::quiet_NaN(), 10, &reason);
+    ASSERT_EQ(o_nan, 0);
+    ASSERT_EQ(reason, RejectReason::InvalidPrice);
+
+    uint64_t o_inf = engine.submitOrder(
+        "DEFAULT", Side::Buy, OrderType::Limit,
+        std::numeric_limits<double>::infinity(), 10, &reason);
+    ASSERT_EQ(o_inf, 0);
+    ASSERT_EQ(reason, RejectReason::InvalidPrice);
+
     // Exceeds max order size
     uint64_t o4 = engine.submitOrder("DEFAULT", Side::Buy, OrderType::Limit, 100.0, 200'000, &reason);
     ASSERT_EQ(o4, 0);
@@ -57,6 +72,9 @@ TEST_CASE(TestEdgeCases_OrderModification) {
     ASSERT_EQ(trades[0].buy_order_id, b1);
     ASSERT_EQ(trades[0].quantity, 10);
     ASSERT_EQ(engine.getOrderStatus(b1), OrderStatus::Filled);
+
+    ASSERT_FALSE(engine.modifyOrder(b2, std::numeric_limits<double>::quiet_NaN(), 10));
+    ASSERT_FALSE(engine.modifyOrder(b2, std::numeric_limits<double>::infinity(), 10));
 
     // Modify b2 to new price 101.0 (loses old position, moves to new level)
     ASSERT_TRUE(engine.modifyOrder(b2, 101.0, 25));
