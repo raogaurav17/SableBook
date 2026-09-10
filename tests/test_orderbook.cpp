@@ -68,3 +68,20 @@ TEST_CASE(TestOrderBook_DepthQuery) {
     ASSERT_DOUBLE_EQ(depth[2].price, 98.0);
     ASSERT_EQ(depth[2].total_quantity, 30);
 }
+
+TEST_CASE(TestOrderBook_RejectsMismatchedSymbol) {
+    OrderBook book("BTC-USD");
+    uint64_t next_tid = 1;
+    auto order = std::make_shared<Order>(
+        1, "ETH-USD", Side::Buy, OrderType::Limit, 100.0, 10, 1);
+
+    auto trades = book.addOrder(order, next_tid);
+
+    ASSERT_TRUE(trades.empty());
+    ASSERT_FALSE(book.bestBid().has_value());
+    ASSERT_FALSE(book.bestAsk().has_value());
+    ASSERT_EQ(book.totalOrders(), 0);
+    ASSERT_EQ(book.getOrder(1), nullptr);
+    ASSERT_EQ(order->status, OrderStatus::New);
+    ASSERT_EQ(order->remaining_quantity, 10);
+}

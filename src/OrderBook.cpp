@@ -9,7 +9,7 @@ OrderBook::OrderBook(std::string symbol)
     : symbol_(std::move(symbol)) {}
 
 std::vector<Trade> OrderBook::addOrder(const OrderPtr& order, uint64_t& next_trade_id) {
-    if (!order) {
+    if (!order || order->symbol != symbol_) {
         return {};
     }
 
