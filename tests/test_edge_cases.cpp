@@ -1,9 +1,25 @@
 #include "test_framework.hpp"
 #include "MatchingEngine.hpp"
+#include "Metrics.hpp"
 
 #include <limits>
 
 using namespace sablebook;
+
+TEST_CASE(TestMetrics_InterpolatedPercentiles) {
+    LatencyTracker tracker;
+    tracker.record(1);
+    tracker.record(2);
+    tracker.record(3);
+    tracker.record(4);
+
+    auto stats = tracker.getStats();
+    ASSERT_EQ(stats.count, 4);
+    ASSERT_DOUBLE_EQ(stats.p50_ns, 2.5);
+    ASSERT_DOUBLE_EQ(stats.p90_ns, 3.7);
+    ASSERT_DOUBLE_EQ(stats.p99_ns, 3.97);
+    ASSERT_DOUBLE_EQ(stats.p99_9_ns, 3.997);
+}
 
 TEST_CASE(TestEdgeCases_ValidationAndRejections) {
     MatchingEngine engine(100'000); // max size 100,000

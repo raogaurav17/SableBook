@@ -68,9 +68,12 @@ public:
         double stddev = std::sqrt(accum / n);
 
         auto percentile = [&](double p) -> double {
-            size_t idx = static_cast<size_t>(p * n / 100.0);
-            if (idx >= n) idx = n - 1;
-            return static_cast<double>(sorted[idx]);
+            double position = p * static_cast<double>(n - 1) / 100.0;
+            size_t lower = static_cast<size_t>(std::floor(position));
+            size_t upper = static_cast<size_t>(std::ceil(position));
+            double fraction = position - static_cast<double>(lower);
+            return static_cast<double>(sorted[lower]) +
+                   fraction * static_cast<double>(sorted[upper] - sorted[lower]);
         };
 
         return LatencyStats{
