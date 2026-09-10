@@ -172,3 +172,37 @@ TEST_CASE(TestEdgeCases_BookUpdateCallbacks) {
     ASSERT_TRUE(last_bbo.hasAsk());
     ASSERT_DOUBLE_EQ(last_bbo.best_ask->price, 105.0);
 }
+
+TEST_CASE(TestEdgeCases_TradeCallbackCanResetDuringSubmit) {
+    MatchingEngine engine;
+    bool callback_called = false;
+    engine.setTradeCallback([&](const Trade&) {
+        callback_called = true;
+        engine.reset();
+    });
+
+    engine.submitLimitOrder(Side::Sell, 100.0, 10);
+    engine.submitLimitOrder(Side::Buy, 100.0, 10);
+
+    ASSERT_TRUE(callback_called);
+    ASSERT_FALSE(engine.getBBO().hasBid());
+    ASSERT_FALSE(engine.getBBO().hasAsk());
+}
+
+TEST_CASE(TestEdgeCases_TradeCallbackCanResetDuringModify) {
+    MatchingEngine engine;
+    uint64_t sell_id = engine.submitLimitOrder(Side::Sell, 100.0, 10);
+    uint64_t buy_id = engine.submitLimitOrder(Side::Buy, 99.0, 20);
+    bool callback_called = false;
+
+    engine.setTradeCallback([&](const Trade&) {
+        callback_called = true;
+        engine.reset();
+    });
+
+    ASSERT_TRUE(engine.modifyOrder(buy_id, 101.0, 20));
+    ASSERT_TRUE(callback_called);
+    ASSERT_FALSE(engine.getBBO().hasBid());
+    ASSERT_FALSE(engine.getBBO().hasAsk());
+    ASSERT_EQ(engine.getOrderStatus(sell_id), std::nullopt);
+}

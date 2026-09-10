@@ -74,6 +74,7 @@ uint64_t MatchingEngine::submitOrder(const std::string& symbol,
 
     uint64_t end_ts = getTimestampNs();
     latency_tracker_.record(end_ts - start_ts);
+    BBO book_bbo = book->getBBO();
 
     if (order->isTerminal()) {
         terminal_orders_[order_id] = order;
@@ -86,7 +87,7 @@ uint64_t MatchingEngine::submitOrder(const std::string& symbol,
     }
 
     if (on_book_update_) {
-        on_book_update_(symbol, book->getBBO());
+        on_book_update_(symbol, book_bbo);
     }
 
     return order_id;
@@ -143,13 +144,14 @@ bool MatchingEngine::modifyOrder(uint64_t order_id, double new_price, uint64_t n
     bool success = book->modifyOrder(order_id, new_price, new_qty, ts, next_trade_id_, trades);
 
     if (success) {
+        BBO book_bbo = book->getBBO();
         if (on_trade_) {
             for (const auto& trade : trades) {
                 on_trade_(trade);
             }
         }
         if (on_book_update_) {
-            on_book_update_(sym_it->second, book->getBBO());
+            on_book_update_(sym_it->second, book_bbo);
         }
     }
 
