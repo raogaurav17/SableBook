@@ -1,6 +1,7 @@
 #include "OrderBook.hpp"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace sablebook {
 
@@ -240,6 +241,11 @@ bool OrderBook::modifyOrder(uint64_t order_id, double new_price, uint64_t new_qt
 
     // Otherwise, cancel and re-submit to lose priority
     Side side = old_order->side;
+    uint64_t filled_quantity = old_order->filledQuantity();
+    if (new_qty > std::numeric_limits<uint64_t>::max() - filled_quantity) {
+        return false;
+    }
+
     cancelOrder(order_id);
 
     auto new_order = std::make_shared<Order>(
@@ -248,9 +254,13 @@ bool OrderBook::modifyOrder(uint64_t order_id, double new_price, uint64_t new_qt
         side,
         OrderType::Limit,
         new_price,
-        new_qty,
+        filled_quantity + new_qty,
         timestamp
     );
+    new_order->remaining_quantity = new_qty;
+    if (filled_quantity > 0) {
+        new_order->status = OrderStatus::PartiallyFilled;
+    }
 
     generated_trades = addOrder(new_order, next_trade_id);
     return true;

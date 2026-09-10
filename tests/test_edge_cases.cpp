@@ -84,6 +84,34 @@ TEST_CASE(TestEdgeCases_OrderModification) {
     ASSERT_EQ(bbo.best_bid->total_quantity, 25);
 }
 
+TEST_CASE(TestEdgeCases_PartialFillModificationPreservesFillHistory) {
+    MatchingEngine engine;
+
+    uint64_t sell_id = engine.submitLimitOrder(Side::Sell, 100.0, 10);
+    uint64_t buy_id = engine.submitLimitOrder(Side::Buy, 100.0, 20);
+
+    ASSERT_EQ(engine.getOrderStatus(sell_id), OrderStatus::Filled);
+    ASSERT_EQ(engine.getOrderStatus(buy_id), OrderStatus::PartiallyFilled);
+
+    OrderPtr before_modify = engine.getOrder(buy_id);
+    ASSERT_TRUE(before_modify != nullptr);
+    ASSERT_EQ(before_modify->quantity, 20);
+    ASSERT_EQ(before_modify->remaining_quantity, 10);
+    ASSERT_EQ(before_modify->filledQuantity(), 10);
+
+    ASSERT_TRUE(engine.modifyOrder(buy_id, 99.0, 5));
+
+    OrderPtr amended = engine.getOrder(buy_id);
+    ASSERT_TRUE(amended != nullptr);
+    ASSERT_EQ(amended->quantity, 15);
+    ASSERT_EQ(amended->remaining_quantity, 5);
+    ASSERT_EQ(amended->filledQuantity(), 10);
+    ASSERT_EQ(engine.getOrderStatus(buy_id), OrderStatus::PartiallyFilled);
+    ASSERT_TRUE(engine.getBBO().hasBid());
+    ASSERT_DOUBLE_EQ(engine.getBBO().best_bid->price, 99.0);
+    ASSERT_EQ(engine.getBBO().best_bid->total_quantity, 5);
+}
+
 TEST_CASE(TestEdgeCases_MultiInstrument) {
     MatchingEngine engine;
 
