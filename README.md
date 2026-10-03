@@ -64,6 +64,94 @@ flowchart TD
     Remaining -->|yes| Post
 ```
 
+## Implementation methodology
+
+SableBook uses a deterministic, single-threaded matching model. The
+implementation separates instrument routing, order validation, book mutation,
+event publication, and measurement so that each responsibility has a clear
+boundary.
+
+### Engine and instrument routing
+
+`MatchingEngine` is the public coordinator. It:
+
+1. Validates quantity and price constraints before an order enters a book.
+2. Assigns monotonically increasing order IDs and records a nanosecond
+   submission timestamp.
+3. Routes the order to an `OrderBook` selected by symbol. The default symbol is
+   created automatically; additional symbols can be registered explicitly.
+4. Collects generated trades and publishes trade, book-update, and rejection
+   callbacks.
+5. Retains terminal orders for status and order-history queries while active
+   orders remain indexed by their book.
+
+Each instrument has an isolated order book, so matching and depth queries never
+cross symbol boundaries.
+
+### Price-time priority and matching
+
+Each `OrderBook` stores bids in a descending `std::map` and asks in an
+ascending `std::map`. Every price level contains a `std::list` of orders,
+which preserves FIFO arrival order. Matching therefore always:
+
+1. Selects the best opposite-side price level.
+2. Checks whether a limit order crosses that level; market orders continue
+   without a price constraint.
+3. Matches the incoming order against the oldest resting order at that level.
+4. Uses the resting order's price for the trade.
+5. Updates remaining quantities and statuses, removes filled orders, and
+   continues across price levels until the aggressive order is complete or no
+   longer marketable.
+
+Unfilled limit quantity is added to the appropriate side of the book.
+Unfilled market quantity never rests and is cancelled or marked partially
+filled after any executed quantity.
+
+### Order lifecycle and indexing
+
+Price levels maintain aggregate quantity as orders are added, reduced, removed,
+or filled. The book stores an `OrderLocation` for every active order,
+containing its side, price, shared order object, and list iterator. Cancellation
+can therefore remove an order directly from its queue instead of scanning all
+orders. A separate order history supports queries after an order leaves the
+active book.
+
+Modification follows queue-priority rules. An unchanged-price quantity
+reduction is applied in place and preserves priority. A price change or
+quantity increase cancels the active entry and resubmits it, causing it to
+re-enter at the back of the relevant FIFO queue. Filled quantity and order
+status are preserved across that resubmission.
+
+### Validation, state, and observability
+
+The engine rejects zero quantities, quantities above the configured maximum,
+and non-finite or non-positive limit prices before mutating book state.
+Orders transition through explicit `New`, `PartiallyFilled`, `Filled`,
+`Cancelled`, and `Rejected` states. Rejection reasons are returned through the
+API and optional rejection callbacks.
+
+Market data is derived from the ordered price levels. BBO and depth queries
+expose best prices, aggregate quantity, and order counts without changing
+state. Trade and book-update callbacks expose mutations to applications
+without coupling the core book to presentation or transport code.
+
+### Metrics and verification
+
+`LatencyTracker` records operation durations from `steady_clock` in nanoseconds.
+Reports sort a copy of the samples and calculate min, p50, p90, p95, p99,
+p99.9, max, arithmetic mean, and population standard deviation. Benchmark
+throughput measures the complete timed workload, while per-operation latency is
+measured around the specific engine call.
+
+The repository verifies this methodology with focused unit tests for matching,
+FIFO ordering, partial fills, cancellation, modification, validation, market
+orders, callbacks, and multi-instrument isolation. CMake builds the core
+library, CLI, tests, and benchmark separately, with strict warnings and
+optimized native compilation by default. AddressSanitizer/UndefinedBehavior-
+Sanitizer and ThreadSanitizer presets provide additional runtime checks. The
+core API intentionally provides no internal synchronization; callers requiring
+concurrency must provide external ownership or coordination.
+
 ## Core API
 
 The public API is centered on `MatchingEngine`:
