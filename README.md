@@ -180,7 +180,8 @@ The test suite covers:
 - Order modification and validation failures
 - Multiple instruments and book update callbacks
 
-The benchmark executable runs four workloads with 200,000 events each:
+The benchmark executable runs four workloads with 1,000,000 events each by default. Pass
+a positive event count to override the default, for example `./build/sablebook_bench 200000`.
 
 1. Resting limit order insertion
 2. Random order cancellation
@@ -188,6 +189,22 @@ The benchmark executable runs four workloads with 200,000 events each:
 4. A mixed workload containing limit orders, cancellations, market orders, and modifications
 
 Benchmark results depend on compiler, hardware, operating system, and build configuration. Run `sablebook_bench` locally before using numbers for comparison.
+
+### Reference results
+
+The following snapshot was collected from the optimized `build-release` executable
+with 1,000,000 events per workload:
+
+| Workload | Total time | Throughput | p50 | p99 | p99.9 | Max |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Limit order insertion | 3.876 s | 258,007 orders/s | 2.56 us | 17.12 us | 97.86 us | 93.65 ms |
+| Order cancellation | 5.569 s | 179,565 cancels/s | 4.43 us | 10.85 us | 75.97 us | 231.99 ms |
+| Active matching execution | 1.043 s | 1,917,592 orders/s | 0.20 us | 0.74 us | 5.43 us | 211.11 ms |
+| Mixed realistic trading workload | 1.291 s | 774,703 events/s | 0.73 us | 4.26 us | 18.43 us | 88.12 ms |
+
+The mixed workload executed 617,228 trades. These figures are a single local
+reference run and are not performance guarantees; compare runs using the same
+compiler, hardware, operating system, and build configuration.
 
 ## Project layout
 

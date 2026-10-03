@@ -149,6 +149,15 @@ TEST_CASE(TestEdgeCases_MultiInstrument) {
     ASSERT_EQ(msft_bbo.best_bid->total_quantity, 50);
 }
 
+TEST_CASE(TestEdgeCases_GetOrderBookDoesNotCreateUnknownSymbol) {
+    MatchingEngine engine;
+
+    ASSERT_FALSE(engine.hasSymbol("UNKNOWN"));
+    ASSERT_EQ(engine.getOrderBook("UNKNOWN"), nullptr);
+    ASSERT_FALSE(engine.hasSymbol("UNKNOWN"));
+    ASSERT_NE(engine.getOrderBook("DEFAULT"), nullptr);
+}
+
 TEST_CASE(TestEdgeCases_BookUpdateCallbacks) {
     MatchingEngine engine;
     int update_count = 0;

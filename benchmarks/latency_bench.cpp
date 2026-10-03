@@ -6,11 +6,14 @@
 #include <random>
 #include <chrono>
 #include <iomanip>
+#include <charconv>
+#include <stdexcept>
 
 using namespace sablebook;
 
 void runLimitOrderInsertBenchmark(size_t num_orders) {
     MatchingEngine engine;
+    engine.latencyTracker().reserve(num_orders);
     LatencyTracker tracker;
     tracker.reserve(num_orders);
 
@@ -45,6 +48,7 @@ void runLimitOrderInsertBenchmark(size_t num_orders) {
 
 void runCancellationBenchmark(size_t num_orders) {
     MatchingEngine engine;
+    engine.latencyTracker().reserve(num_orders);
     LatencyTracker tracker;
     tracker.reserve(num_orders);
 
@@ -84,6 +88,7 @@ void runCancellationBenchmark(size_t num_orders) {
 
 void runActiveMatchingBenchmark(size_t num_pairs) {
     MatchingEngine engine;
+    engine.latencyTracker().reserve(num_pairs * 2);
     LatencyTracker tracker;
     tracker.reserve(num_pairs);
 
@@ -120,6 +125,7 @@ void runActiveMatchingBenchmark(size_t num_pairs) {
 
 void runRealisticMixedWorkloadBenchmark(size_t total_events) {
     MatchingEngine engine;
+    engine.latencyTracker().reserve(total_events);
     LatencyTracker tracker;
     tracker.reserve(total_events);
 
@@ -179,17 +185,31 @@ void runRealisticMixedWorkloadBenchmark(size_t total_events) {
     tracker.printReport("Mixed Workload Latency");
 }
 
-int main() {
+int main(int argc, char** argv) {
     std::cout << "======================================================\n";
     std::cout << "        SableBook Performance Benchmark Suite         \n";
     std::cout << "======================================================\n\n";
 
-    constexpr size_t N = 200'000;
+    constexpr size_t default_events = 1'000'000;
+    size_t events = default_events;
+    if (argc > 2) {
+        std::cerr << "Usage: " << argv[0] << " [events]\n";
+        return 2;
+    }
+    if (argc == 2) {
+        const char* first = argv[1];
+        const char* last = first + std::char_traits<char>::length(first);
+        auto [end, error] = std::from_chars(first, last, events);
+        if (error != std::errc{} || end != last || events == 0) {
+            std::cerr << "events must be a positive integer\n";
+            return 2;
+        }
+    }
 
-    runLimitOrderInsertBenchmark(N);
-    runCancellationBenchmark(N);
-    runActiveMatchingBenchmark(N);
-    runRealisticMixedWorkloadBenchmark(N);
+    runLimitOrderInsertBenchmark(events);
+    runCancellationBenchmark(events);
+    runActiveMatchingBenchmark(events);
+    runRealisticMixedWorkloadBenchmark(events);
 
     return 0;
 }
